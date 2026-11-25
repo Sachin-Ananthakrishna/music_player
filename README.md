@@ -94,7 +94,7 @@ Implementing the 3-band equalizer required understanding how Android's native au
 ## AI Tools Disclosure
 
 - **ChatGPT** was used for planning.
-- **Antigravity coding assistance** was used for coding assistance and documentation.
+- **Antigravity** was used for coding assistance and documentation.
 
 ## Known Limitations
 
