@@ -5,6 +5,13 @@ An Android music player built with Flutter for the **Bose Professional Software 
 ## Overview
 A simple Android music player built using Flutter. It allows users to play bundled music or select audio files from their device. The application includes standard playback controls, a 3-band equalizer for adjusting **Low**, **Mid**, and **High** frequencies, and Android notification controls for managing playback in the background.
 
+## Download
+
+Download the latest Android APK from GitHub Releases:
+
+[**Download Music Player v1.0.0 (APK)**](https://github.com/Sachin-Ananthakrishna/music_player/releases/tag/v1.0.0)
+
+
 ## Features
 
 - **Music Playback**: Play three bundled audio tracks offline or add music files from your Android device.
