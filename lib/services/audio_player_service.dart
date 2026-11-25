@@ -91,6 +91,20 @@ class AudioPlayerService extends ChangeNotifier {
   /// Non-null only after [_equalizerReady] becomes true.
   AndroidEqualizerParameters? get equalizerParameters => _eqParams;
 
+  double get minGainDb => _eqParams?.minDecibels ?? -15.0;
+  double get maxGainDb => _eqParams?.maxDecibels ?? 15.0;
+  double get lowGain => _bandGain(_lowBandIndex);
+  double get midGain => _bandGain(_midBandIndex);
+  double get highGain => _bandGain(_highBandIndex);
+
+  double _bandGain(int bandIndex) {
+    final params = _eqParams;
+    if (params == null || bandIndex < 0 || bandIndex >= params.bands.length) {
+      return 0.0;
+    }
+    return params.bands[bandIndex].gain;
+  }
+
   // ── Initialisation ────────────────────────────────────────────────────────
 
   Future<void> _initPlayer() async {
@@ -165,19 +179,20 @@ class AudioPlayerService extends ChangeNotifier {
       }
 
       _eqParams = params;
-      _lowBandIndex  = _closestBandIndex(params.bands, 250000.0);
-      _midBandIndex  = _closestBandIndex(params.bands, 1000000.0);
-      _highBandIndex = _closestBandIndex(params.bands, 4000000.0);
+      // centerFrequency from just_audio is in Hz.
+      _lowBandIndex  = _closestBandIndex(params.bands, 250.0);
+      _midBandIndex  = _closestBandIndex(params.bands, 1000.0);
+      _highBandIndex = _closestBandIndex(params.bands, 4000.0);
 
       _equalizerReady = true;
-      notifyListeners();
+      _safeNotifyListeners();
 
       debugPrint(
         'AudioPlayerService: EQ ready. ${params.bands.length} bands | '
         'gain range: ${params.minDecibels}..${params.maxDecibels} dB | '
-        'Low→${params.bands[_lowBandIndex].centerFrequency / 1000} Hz, '
-        'Mid→${params.bands[_midBandIndex].centerFrequency / 1000} Hz, '
-        'High→${params.bands[_highBandIndex].centerFrequency / 1000} Hz',
+        'Low→${params.bands[_lowBandIndex].centerFrequency} Hz, '
+        'Mid→${params.bands[_midBandIndex].centerFrequency} Hz, '
+        'High→${params.bands[_highBandIndex].centerFrequency} Hz',
       );
     } catch (e) {
       // EQ init failed (e.g., emulator with no audiofx support). We log the
@@ -186,13 +201,13 @@ class AudioPlayerService extends ChangeNotifier {
     }
   }
 
-  /// Returns the index of the band whose [centerFrequency] (milli-Hz) is
-  /// nearest to [targetMilliHz].
-  int _closestBandIndex(List<AndroidEqualizerBand> bands, double targetMilliHz) {
+  /// Returns the index of the band whose [centerFrequency] (Hz) is
+  /// nearest to [targetHz].
+  int _closestBandIndex(List<AndroidEqualizerBand> bands, double targetHz) {
     int best = 0;
-    double bestDiff = (bands[0].centerFrequency - targetMilliHz).abs();
+    double bestDiff = (bands[0].centerFrequency - targetHz).abs();
     for (int i = 1; i < bands.length; i++) {
-      final diff = (bands[i].centerFrequency - targetMilliHz).abs();
+      final diff = (bands[i].centerFrequency - targetHz).abs();
       if (diff < bestDiff) {
         bestDiff = diff;
         best = i;
@@ -290,6 +305,7 @@ class AudioPlayerService extends ChangeNotifier {
     if (bandIndex >= _eqParams!.bands.length) return;
     try {
       await _eqParams!.bands[bandIndex].setGain(gainDb);
+      _safeNotifyListeners();
     } catch (e) {
       debugPrint(
           'AudioPlayerService: setGain(band=$bandIndex, gain=$gainDb) error: $e');
