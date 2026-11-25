@@ -22,7 +22,9 @@ Download the latest Android APK from GitHub Releases:
 
 ## Screenshots
 
-<img src="screenshots/music_player.jpeg" alt="Music Player" width="300">
+<div align="center">
+  <img src="screenshots/music_player.jpeg" alt="Music Player" width="250">
+</div>
 
 ## Tech Stack & Packages
 
@@ -92,7 +94,7 @@ Implementing the 3-band equalizer required understanding how Android's native au
 ## AI Tools Disclosure
 
 - **ChatGPT** was used for planning.
-- **Antigravity coding assistance** (using Claude Sonnet 4.6 and Gemini) was used for coding assistance and documentation.
+- **Antigravity coding assistance** was used for coding assistance and documentation.
 
 ## Known Limitations
 
