@@ -3,17 +3,15 @@
 An Android music player built with Flutter for the **Bose Professional Software Development Intern – Frontend Applications** practical challenge.
 
 ## Overview
-
-This application plays bundled MP3 audio assets offline, lets users add audio files from their Android device, provides Android media notification/lock-screen controls, and includes real-time 3-band audio equalization (**Low**, **Mid**, and **High**) using Android's native audio effects pipeline. It is designed for portrait-oriented Android phones with a Material 3 dark interface.
+A simple Android music player built using Flutter. It allows users to play bundled music or select audio files from their device. The application includes standard playback controls, a 3-band equalizer for adjusting **Low**, **Mid**, and **High** frequencies, and Android notification controls for managing playback in the background.
 
 ## Features
 
-- **Bundled Audio Playback**: Plays three bundled MP3 tracks (`assets/audio/track1.mp3`, `track2.mp3`, `track3.mp3`) offline.
-- **User-Selected Music**: **Add Music** button opens the Android system file picker so users can add local audio files (`mp3`, `wav`, `aac`, `m4a`, `ogg`, `flac`, `opus`) alongside bundled tracks.
-- **Playback Controls**: Play, Pause, Previous track (restarts current track if `> 3s` elapsed, otherwise goes to previous), and Next track with automatic advance across the playlist.
-- **5-Second Seek Controls & Progress Slider**: Rewind 5s and Forward 5s buttons (clamped to `0` and track duration) alongside a seekable slider with `mm:ss` elapsed time and total duration.
-- **Real-Time 3-Band Equalizer**: Adjusts **Low**, **Mid**, and **High** gain in dB while audio is playing, plus a **Reset** button to return all three bands to `0.0 dB` (flat).
-- **Android Notification & Lock-Screen Controls**: Displays current track title, artist label, play/pause, previous, and next controls in the Android media notification and lock screen.
+- **Music Playback**: Play three bundled audio tracks offline or add music files from your Android device.
+- **Playback Controls**: Play, Pause, Previous track (restarts current track if `> 3s` elapsed, otherwise goes to previous) and Next track with automatically move to the next track when a song finishes.
+- **Seek Controls**: Move through a track using the progress slider or dedicated 5-second rewind and forward buttons.
+- **Real-Time 3-Band Equalizer**: Adjusts **Low**, **Mid**, and **High** gain in dB while music is playing, plus a **Reset** button to return all three bands to default (flat).
+- **Background Playback**: Displays current track title, artist label, play/pause, previous and next controls in the Android notifications and lock screen.
 
 ## Screenshots
 
@@ -37,7 +35,7 @@ Verified from `pubspec.yaml`, `pubspec.lock`, and `flutter --version`:
 
 - [`lib/main.dart`](lib/main.dart) (`MusicPlayerApp`): Locks portrait orientation, initializes `JustAudioBackground`, configures the Material 3 dark theme, and sets `PlayerScreen` as home.
 - [`lib/models/track.dart`](lib/models/track.dart) (`Track`): Immutable model with `title`, `artist`, `path`, and `isAsset`.
-- [`lib/services/audio_player_service.dart`](lib/services/audio_player_service.dart) (`AudioPlayerService`): `ChangeNotifier` managing a single `AudioPlayer` instance, bundled and user-selected playlist items, 5-second relative seeking, `AndroidEqualizer`, and stream subscriptions.
+- [`lib/services/audio_player_service.dart`](lib/services/audio_player_service.dart) (`AudioPlayerService`): Handles audio playback, playlist management, seeking, equalizer settings and playback state updates using a single audio player instance.
 - [`lib/screens/player_screen.dart`](lib/screens/player_screen.dart) (`PlayerScreen`): Owns and disposes `AudioPlayerService`, triggers `FilePicker.pickFile(type: FileType.audio)`, and composes the player UI.
 - [`lib/widgets/progress_slider.dart`](lib/widgets/progress_slider.dart) (`ProgressSlider`): Seek slider with `mm:ss` elapsed/duration labels and 5-second rewind/forward buttons.
 - [`lib/widgets/playback_controls.dart`](lib/widgets/playback_controls.dart) (`PlaybackControls`): Previous, prominent circular Play/Pause, and Next buttons.
@@ -58,17 +56,20 @@ Verified from `pubspec.yaml`, `pubspec.lock`, and `flutter --version`:
 
 ## Android Notification Controls & Configuration
 
-- `JustAudioBackground.init(...)` is called in `main()` before `runApp`, and each `AudioSource` in the playlist is tagged with a `MediaItem` (`id`, `title`, `artist`).
-- `android/app/src/main/kotlin/com/example/music_player/MainActivity.kt` extends `AudioServiceActivity` so the Flutter engine binds to the media service.
-- `android/app/src/main/AndroidManifest.xml` declares:
-  - `MODIFY_AUDIO_SETTINGS` (for `Equalizer`)
-  - `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` (for `AudioService` foreground media playback)
-  - `POST_NOTIFICATIONS` (for Android 13+ notification visibility)
-  - `com.ryanheise.audioservice.AudioService` (`foregroundServiceType="mediaPlayback"`) and `com.ryanheise.audioservice.MediaButtonReceiver`
+- Integrated `just_audio_background` to provide Android media notifications and lock-screen playback controls.
+- Initialized `JustAudioBackground` before `runApp()` and attached `MediaItem` metadata to audio tracks to display track information.
+- Configured Android's `AudioServiceActivity` and the required manifest permissions for background media playback and notification support.
+- Implemented Play/Pause, Previous and Next controls, allowing users to manage music playback without opening the application.
+
 
 ## Challenges Faced
 
-- **Inspecting `just_audio` `0.10.6` and `file_picker` `13.4.1` APIs**: `just_audio` `0.10.6` exposes `AndroidEqualizer.parameters` as a `Future` and `centerFrequency` in Hz (not milli-Hz), while `file_picker` `13.4.1` uses static `FilePicker.pickFile(...)` rather than `FilePicker.platform.pickFiles(...)`. Inspecting the installed package sources prevented runtime/API mismatches.
+### 1. Background Audio Playback
+Configuring background playback and Android media notifications required integrating `just_audio_background`, setting up the required Android components, and ensuring playback controls were accessible from the notification panel and lock screen.
+
+### 2. Native Equalizer Integration
+Implementing the 3-band equalizer required understanding how Android's native audio effects work with Flutter. I used `AndroidEqualizer` and mapped the Low, Mid, and High controls to the closest available frequency bands supported by the device.
+
 
 ## Installation & Running
 
