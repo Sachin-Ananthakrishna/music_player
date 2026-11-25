@@ -15,7 +15,7 @@ A simple Android music player built using Flutter. It allows users to play bundl
 
 ## Screenshots
 
-> **Placeholder:** Insert portrait screenshots from a physical Android device here after verification.
+> ![Music Player](screenshots/music_player.jpeg)
 
 ## Tech Stack & Packages
 
