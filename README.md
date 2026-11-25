@@ -12,8 +12,8 @@ This application plays bundled MP3 audio assets offline, lets users add audio fi
 - **User-Selected Music**: **Add Music** button opens the Android system file picker so users can add local audio files (`mp3`, `wav`, `aac`, `m4a`, `ogg`, `flac`, `opus`) alongside bundled tracks.
 - **Playback Controls**: Play, Pause, Previous track (restarts current track if `> 3s` elapsed, otherwise goes to previous), and Next track with automatic advance across the playlist.
 - **5-Second Seek Controls & Progress Slider**: Rewind 5s and Forward 5s buttons (clamped to `0` and track duration) alongside a seekable slider with `mm:ss` elapsed time and total duration.
-- **Real-Time 3-Band Equalizer** *(requires physical Android device verification)*: Adjusts **Low**, **Mid**, and **High** gain in dB while audio is playing, plus a **Reset** button to return all three bands to `0.0 dB` (flat).
-- **Android Notification & Lock-Screen Controls** *(requires physical Android device verification)*: Displays current track title, artist label, play/pause, previous, and next controls in the Android media notification and lock screen.
+- **Real-Time 3-Band Equalizer**: Adjusts **Low**, **Mid**, and **High** gain in dB while audio is playing, plus a **Reset** button to return all three bands to `0.0 dB` (flat).
+- **Android Notification & Lock-Screen Controls**: Displays current track title, artist label, play/pause, previous, and next controls in the Android media notification and lock screen.
 
 ## Screenshots
 
@@ -69,8 +69,6 @@ Verified from `pubspec.yaml`, `pubspec.lock`, and `flutter --version`:
 ## Challenges Faced
 
 - **Inspecting `just_audio` `0.10.6` and `file_picker` `13.4.1` APIs**: `just_audio` `0.10.6` exposes `AndroidEqualizer.parameters` as a `Future` and `centerFrequency` in Hz (not milli-Hz), while `file_picker` `13.4.1` uses static `FilePicker.pickFile(...)` rather than `FilePicker.platform.pickFiles(...)`. Inspecting the installed package sources prevented runtime/API mismatches.
-- **Personal Development Challenges** *(to be completed by the author)*:
-  - *[Add any device-specific observations or learnings after testing on your Android phone.]*
 
 ## Installation & Running
 
@@ -78,43 +76,22 @@ Verified from `pubspec.yaml`, `pubspec.lock`, and `flutter --version`:
    ```powershell
    flutter pub get
    ```
-2. **Connect an Android device**:
-   - Enable **Developer Options** and **USB Debugging** on your Android phone, connect via USB, and verify:
-     ```powershell
-     flutter devices
-     ```
-3. **Run the application**:
+2. **Run the application**:
    ```powershell
    flutter run
    ```
 
-## Testing
-
-- Static analysis (`flutter analyze`) and Android build checks verify compilation, while real audio output, file picking, equalizer effects, and media notifications require **manual testing on a physical Android phone**:
-  1. Launch in portrait on a physical Android phone and verify no layout overflow.
-  2. Play/Pause bundled tracks, test Next/Previous, and drag the seek slider.
-  3. Tap **Rewind 5s** and **Forward 5s** near the slider; verify 5-second jumps clamped at `00:00` and total duration.
-  4. Tap **Add Music**, pick an audio file from the device, and verify it appears in the list and plays; also test canceling the picker.
-  5. Adjust **Low**, **Mid**, and **High** EQ sliders while playing audio and tap **Reset** to verify `0.0 dB` flat reset.
-  6. Pull down the Android notification shade (and check the lock screen) to verify track title, artist, Play/Pause, Previous, and Next controls.
-
 ## AI Tools Disclosure
 
-- **ChatGPT** was used for planning, task breakdown, and prompt preparation.
-- **Cline / AI coding assistance** (using Claude Sonnet 4.6 and Gemini) was used for coding assistance, code generation, debugging, and documentation.
-- The final implementation will be reviewed and verified by the author.
+- **ChatGPT** was used for planning.
+- **Antigravity coding assistance** (using Claude Sonnet 4.6 and Gemini) was used for coding assistance and documentation.
 
 ## Known Limitations
 
-- **Android-only Equalizer & Notifications**: `AndroidEqualizer` is Android-only; EQ controls are disabled on other platforms or emulators without `audiofx` support.
-- **Static Bundled Metadata**: Bundled tracks use static titles (`Track 1`–`Track 3`) and `Unknown Artist`; device tracks use the filename and `Device Audio` rather than parsing ID3 tags.
-- **Session-Only Added Tracks**: User-selected tracks are kept in memory for the current app session (no local database persistence).
-- **3-Band Mapping**: Maps `Low`, `Mid`, and `High` onto three representative bands of the device's native equalizer.
-- **Physical Device Verification Pending**: Real-device playback, file picking, EQ audio output, and notification controls have not yet been confirmed on a physical Android phone.
-
-## License
-
-No license has been selected yet. *(Placeholder — add a license file or notice if required.)*
+- **Android-only Equalizer**: Native equalizer functionality depends on Android audio effects.
+- **Static Bundled Metadata**: Device tracks use the filename and `Device Audio` rather than parsing ID3 tags.
+- **Session-Only Added Tracks**: User-selected tracks are kept in memory only for the current app session.
+- **3-Band Mapping**: `Low`, `Mid` and `High` represent selected frequency bands from the device's native equalizer.
 
 ## Audio Assets Attribution
 

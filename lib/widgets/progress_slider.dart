@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Displays a seekable playback slider with elapsed time, total duration,
-/// and 5-second rewind/forward buttons.
-///
-/// Tracks drag state locally so incoming position updates do not cause the
-/// slider thumb or elapsed label to jump while the user is scrubbing.
+/// Displays a seekable playback slider with elapsed time, total duration, and 5-second rewind/forward buttons.
+/// Tracks drag state locally so incoming position updates do not cause the slider thumb or elapsed label to jump while the user is scrubbing.
 class ProgressSlider extends StatefulWidget {
   final Duration position;
   final Duration duration;

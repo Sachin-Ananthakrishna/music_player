@@ -7,21 +7,20 @@ import 'package:just_audio_background/just_audio_background.dart';
 import '../models/track.dart';
 
 /// Bundled tracks shipped in assets/audio/. Titles and artist labels are static
-/// because these asset files do not expose runtime ID3 metadata.
 const List<Track> _bundledTracks = [
   Track(
-    title: 'Track 1',
-    artist: 'Unknown Artist',
+    title: 'Cozy Coffeehouse',
+    artist: 'Lunar Years',
     path: 'assets/audio/track1.mp3',
   ),
   Track(
-    title: 'Track 2',
-    artist: 'Unknown Artist',
+    title: 'Drift Phonk',
+    artist: 'Sub_Clair',
     path: 'assets/audio/track2.mp3',
   ),
   Track(
-    title: 'Track 3',
-    artist: 'Unknown Artist',
+    title: 'Uplifting Action Sport Energetic Rock',
+    artist: 'ikoliks',
     path: 'assets/audio/track3.mp3',
   ),
 ];
@@ -36,11 +35,9 @@ const Set<String> _supportedExtensions = {
   'opus',
 };
 
-/// Manages audio playback, playlist state, Android media notifications, and
-/// the native Android 3-band equalizer through a single [AudioPlayer].
+/// Manages audio playback, playlist state, Android media notifications, and the native Android 3-band equalizer through a single [AudioPlayer].
 class AudioPlayerService extends ChangeNotifier {
-  /// Non-null on Android; null on other platforms where AndroidEqualizer is
-  /// unsupported.
+  /// Non-null on Android; null on other platforms where AndroidEqualizer is unsupported.
   final AndroidEqualizer? _equalizer;
 
   late final AudioPlayer _player;
@@ -48,8 +45,7 @@ class AudioPlayerService extends ChangeNotifier {
   final List<Track> _tracks = List.of(_bundledTracks);
   int _currentIndex = 0;
 
-  // Indices into AndroidEqualizerParameters.bands resolved by proximity to
-  // 250 Hz (Low), 1000 Hz (Mid), and 4000 Hz (High).
+  // Indices into AndroidEqualizerParameters.bands resolved by proximity to 250 Hz (Low), 1000 Hz (Mid), and 4000 Hz (High).
   int _lowBandIndex = -1;
   int _midBandIndex = -1;
   int _highBandIndex = -1;
@@ -95,8 +91,7 @@ class AudioPlayerService extends ChangeNotifier {
   }
 
   Future<void> _initPlayer() async {
-    // Attach AndroidEqualizer to the player's AudioPipeline so it shares the
-    // exact Android audio session ID with ExoPlayer.
+    // Attach AndroidEqualizer to the player's AudioPipeline so it shares the exact Android audio session ID with ExoPlayer.
     final pipeline = AudioPipeline(
       androidAudioEffects: _equalizer != null ? [_equalizer] : [],
     );
@@ -116,8 +111,7 @@ class AudioPlayerService extends ChangeNotifier {
         _duration = dur ?? Duration.zero;
         _safeNotifyListeners();
       }),
-      // Keep _currentIndex in sync when tracks advance automatically or when
-      // the user skips from the Android media notification / lock screen.
+      // Keep _currentIndex in sync when tracks advance automatically or whenthe user skips from the Android media notification / lock screen.
       _player.currentIndexStream.listen((index) {
         if (index != null && index >= 0 && index < _tracks.length) {
           _currentIndex = index;
@@ -140,8 +134,7 @@ class AudioPlayerService extends ChangeNotifier {
     }
   }
 
-  /// Loads the bundled tracks as a playlist so just_audio_background can drive
-  /// notification next/previous actions directly on the single AudioPlayer.
+  /// Loads the bundled tracks as a playlist so just_audio_background can drive notification next/previous actions directly on the single AudioPlayer.
   Future<void> _loadInitialPlaylist() async {
     try {
       await _player.setAudioSources(
@@ -154,8 +147,7 @@ class AudioPlayerService extends ChangeNotifier {
     }
   }
 
-  /// Builds an [AudioSource] tagged with a [MediaItem] as required by
-  /// just_audio_background to populate Android notification metadata.
+  /// Builds an [AudioSource] tagged with a [MediaItem] as required by just_audio_background to populate Android notification metadata.
   AudioSource _toAudioSource(Track track) {
     final mediaItem = MediaItem(
       id: track.path,
@@ -167,8 +159,7 @@ class AudioPlayerService extends ChangeNotifier {
         : AudioSource.file(track.path, tag: mediaItem);
   }
 
-  /// Enables AndroidEqualizer and maps Low/Mid/High to the closest available
-  /// hardware bands on the device.
+  /// Enables AndroidEqualizer and maps Low/Mid/High to the closest available hardware bands on the device.
   Future<void> _initEqualizer() async {
     final eq = _equalizer;
     if (eq == null) return;
@@ -190,8 +181,7 @@ class AudioPlayerService extends ChangeNotifier {
       _equalizerReady = true;
       _safeNotifyListeners();
     } catch (e) {
-      // On emulators or devices without audiofx support, leave _equalizerReady
-      // false so the UI disables EQ controls instead of failing.
+      // On emulators or devices without audiofx support, leave _equalizerReady false so the UI disables EQ controls instead of failing.
       debugPrint('AudioPlayerService: equalizer init failed: $e');
     }
   }
@@ -211,9 +201,7 @@ class AudioPlayerService extends ChangeNotifier {
 
   // ── Playback & playlist controls ──────────────────────────────────────────
 
-  /// Adds a user-selected audio file from the device and starts playing it.
-  /// Returns a user-facing error message if the file is unsupported or fails
-  /// to load, or `null` on success.
+  /// Adds a user-selected audio file from the device and starts playing it. Returns a user-facing error message if the file is unsupported or fails to load, or `null` on success.
   Future<String?> addTrackFromFile(String filePath, String fileName) async {
     final ext = _fileExtension(fileName);
     if (ext.isNotEmpty && !_supportedExtensions.contains(ext)) {
@@ -324,8 +312,7 @@ class AudioPlayerService extends ChangeNotifier {
     }
   }
 
-  /// Restarts the current track if more than 3 s have elapsed; otherwise moves
-  /// to the previous track (wrapping to the last track from index 0).
+  /// Restarts the current track if more than 3 s have elapsed; otherwise moves to the previous track (wrapping to the last track from index 0).
   Future<void> skipToPrevious() async {
     if (_position.inSeconds > 3) {
       await seekTo(Duration.zero);
@@ -385,8 +372,7 @@ class AudioPlayerService extends ChangeNotifier {
       await sub.cancel();
     }
     _subscriptions.clear();
-    // Disposing AudioPlayer releases all attached AudioPipeline effects,
-    // including AndroidEqualizer, and tears down the background audio session.
+    // Disposing AudioPlayer releases all attached AudioPipeline effects, including AndroidEqualizer, and tears down the background audio session.
     await _player.dispose();
     super.dispose();
   }

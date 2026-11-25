@@ -1,5 +1,4 @@
-/// A single playable audio track, either bundled as an asset or picked from
-/// the user's device.
+/// A single playable audio track, either bundled as an asset or picked from the user's device.
 class Track {
   /// Display title of the track.
   final String title;
