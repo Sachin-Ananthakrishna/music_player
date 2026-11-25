@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../services/audio_player_service.dart';
 import '../widgets/equalizer_controls.dart';
@@ -27,6 +28,33 @@ class _PlayerScreenState extends State<PlayerScreen> {
     super.dispose();
   }
 
+  Future<void> _pickAndAddMusic() async {
+    try {
+      final picked = await FilePicker.pickFile(type: FileType.audio);
+      if (picked == null) return; // User canceled.
+
+      final path = picked.path;
+      if (path == null) {
+        _showMessage('Could not access the selected audio file.');
+        return;
+      }
+
+      final error = await _audioService.addTrackFromFile(path, picked.name);
+      if (error != null) {
+        _showMessage(error);
+      }
+    } catch (e) {
+      _showMessage('Failed to open file picker.');
+    }
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -48,7 +76,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ── Track artwork placeholder & metadata ─────────────────
                   Center(
                     child: Container(
                       width: 140,
@@ -85,16 +112,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // ── Seek bar & elapsed/total time ────────────────────────
                   ProgressSlider(
                     position: _audioService.position,
                     duration: _audioService.duration,
                     onSeek: _audioService.seekTo,
+                    onRewind5: () =>
+                        _audioService.seekBy(const Duration(seconds: -5)),
+                    onForward5: () =>
+                        _audioService.seekBy(const Duration(seconds: 5)),
                   ),
                   const SizedBox(height: 12),
-
-                  // ── Transport controls ───────────────────────────────────
                   PlaybackControls(
                     isPlaying: _audioService.isPlaying,
                     onPrevious: _audioService.skipToPrevious,
@@ -108,8 +135,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     onNext: _audioService.skipToNext,
                   ),
                   const SizedBox(height: 20),
-
-                  // ── 3-band Equalizer ─────────────────────────────────────
                   EqualizerControls(
                     isReady: _audioService.equalizerReady,
                     minDb: _audioService.minGainDb,
@@ -123,13 +148,21 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     onReset: _audioService.resetEq,
                   ),
                   const SizedBox(height: 20),
-
-                  // ── Bundled track list ───────────────────────────────────
-                  Text(
-                    'Tracks',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tracks',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      FilledButton.tonalIcon(
+                        onPressed: _pickAndAddMusic,
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text('Add Music'),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Card(
@@ -191,11 +224,17 @@ class _TrackTile extends StatelessWidget {
       ),
       title: Text(
         title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
         ),
       ),
-      subtitle: Text(artist),
+      subtitle: Text(
+        artist,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       trailing: isSelected
           ? Icon(
               isPlaying ? Icons.volume_up_rounded : Icons.check_rounded,

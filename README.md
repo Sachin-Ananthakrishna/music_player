@@ -4,72 +4,82 @@ An Android music player built with Flutter for the **Bose Professional Software 
 
 ## Overview
 
-This application plays bundled MP3 audio assets offline and provides real-time 3-band audio equalization (**Low**, **Mid**, and **High**) using Android's native audio effects pipeline. It is designed for portrait-oriented Android phones with a clean Material 3 dark interface.
+This application plays bundled MP3 audio assets offline, lets users add audio files from their Android device, provides Android media notification/lock-screen controls, and includes real-time 3-band audio equalization (**Low**, **Mid**, and **High**) using Android's native audio effects pipeline. It is designed for portrait-oriented Android phones with a Material 3 dark interface.
 
 ## Features
 
-- **Offline Bundled Audio Playback**: Plays three bundled MP3 tracks (`assets/audio/track1.mp3`, `track2.mp3`, `track3.mp3`) with no network or streaming dependencies.
-- **Transport Controls**: Play, Pause, Previous track (restarts current track if `> 3s` elapsed, otherwise goes to previous), and Next track with automatic advance on track completion.
-- **Seekable Progress Bar**: Displays elapsed time and total duration (`mm:ss`) and preserves local drag state while scrubbing so the slider does not jump.
-- **Track Selection**: Lists all bundled tracks, highlights the active track, and switches playback on tap.
+- **Bundled Audio Playback**: Plays three bundled MP3 tracks (`assets/audio/track1.mp3`, `track2.mp3`, `track3.mp3`) offline.
+- **User-Selected Music**: **Add Music** button opens the Android system file picker so users can add local audio files (`mp3`, `wav`, `aac`, `m4a`, `ogg`, `flac`, `opus`) alongside bundled tracks.
+- **Playback Controls**: Play, Pause, Previous track (restarts current track if `> 3s` elapsed, otherwise goes to previous), and Next track with automatic advance across the playlist.
+- **5-Second Seek Controls & Progress Slider**: Rewind 5s and Forward 5s buttons (clamped to `0` and track duration) alongside a seekable slider with `mm:ss` elapsed time and total duration.
 - **Real-Time 3-Band Equalizer** *(requires physical Android device verification)*: Adjusts **Low**, **Mid**, and **High** gain in dB while audio is playing, plus a **Reset** button to return all three bands to `0.0 dB` (flat).
+- **Android Notification & Lock-Screen Controls** *(requires physical Android device verification)*: Displays current track title, artist label, play/pause, previous, and next controls in the Android media notification and lock screen.
 
 ## Screenshots
 
 > **Placeholder:** Insert portrait screenshots from a physical Android device here after verification.
 
-## Tech Stack
+## Tech Stack & Packages
 
 Verified from `pubspec.yaml`, `pubspec.lock`, and `flutter --version`:
 
 - **Flutter**: `3.44.8` (`stable`)
 - **Dart**: `3.12.2` (SDK constraint `^3.12.2`)
-- **Audio Playback & Android EQ**: `just_audio: ^0.10.6` (resolved `0.10.6`)
-- **Icons**: `cupertino_icons: ^1.0.8`
-- **Linting (dev)**: `flutter_lints: ^6.0.0`
-- **Target Platform**: Android (`android.media.audiofx.Equalizer` via `just_audio`'s `AndroidEqualizer`)
+- **Target Platform**: Android
+- **Packages**:
+  - `just_audio: ^0.10.6` (resolved `0.10.6`) — Audio playback, playlist management, and `AndroidEqualizer`
+  - `just_audio_background: ^0.0.1-beta.17` (resolved `0.0.1-beta.17`, using `audio_service: 0.18.19`) — Android media notification and lock-screen controls
+  - `file_picker: ^13.4.1` (resolved `13.4.1`) — System file picker for selecting device audio files
+  - `cupertino_icons: ^1.0.8` (resolved `1.0.9`)
+  - `flutter_lints: ^6.0.0` (dev dependency)
 
-## Architecture
+## Project Architecture
 
-The project uses a straightforward separation between data model, audio service, screen, and reusable widgets without external state management packages:
-
-- [`lib/main.dart`](lib/main.dart) (`MusicPlayerApp`): Configures portrait orientation lock, Material 3 dark theme, and `PlayerScreen` as the home route.
-- [`lib/models/track.dart`](lib/models/track.dart) (`Track`): Immutable model holding `title`, `artist`, and `assetPath`.
-- [`lib/services/audio_player_service.dart`](lib/services/audio_player_service.dart) (`AudioPlayerService`): `ChangeNotifier` managing a single `AudioPlayer` instance, bundled track loading, playback state/position/duration streams, and the `AndroidEqualizer`.
-- [`lib/screens/player_screen.dart`](lib/screens/player_screen.dart) (`PlayerScreen`): Owns and disposes `AudioPlayerService`, listens to updates via `ListenableBuilder`, and composes the player layout.
-- [`lib/widgets/progress_slider.dart`](lib/widgets/progress_slider.dart) (`ProgressSlider`): Seek slider with `mm:ss` elapsed and total duration labels.
+- [`lib/main.dart`](lib/main.dart) (`MusicPlayerApp`): Locks portrait orientation, initializes `JustAudioBackground`, configures the Material 3 dark theme, and sets `PlayerScreen` as home.
+- [`lib/models/track.dart`](lib/models/track.dart) (`Track`): Immutable model with `title`, `artist`, `path`, and `isAsset`.
+- [`lib/services/audio_player_service.dart`](lib/services/audio_player_service.dart) (`AudioPlayerService`): `ChangeNotifier` managing a single `AudioPlayer` instance, bundled and user-selected playlist items, 5-second relative seeking, `AndroidEqualizer`, and stream subscriptions.
+- [`lib/screens/player_screen.dart`](lib/screens/player_screen.dart) (`PlayerScreen`): Owns and disposes `AudioPlayerService`, triggers `FilePicker.pickFile(type: FileType.audio)`, and composes the player UI.
+- [`lib/widgets/progress_slider.dart`](lib/widgets/progress_slider.dart) (`ProgressSlider`): Seek slider with `mm:ss` elapsed/duration labels and 5-second rewind/forward buttons.
 - [`lib/widgets/playback_controls.dart`](lib/widgets/playback_controls.dart) (`PlaybackControls`): Previous, prominent circular Play/Pause, and Next buttons.
 - [`lib/widgets/equalizer_controls.dart`](lib/widgets/equalizer_controls.dart) (`EqualizerControls`): `Equalizer` card with `Low`, `Mid`, `High` sliders, dB readouts, and `Reset` button.
 
-## Audio Playback Implementation
+## Audio Playback & Controls
 
-- `AudioPlayerService` creates one `AudioPlayer` configured with an `AudioPipeline`.
-- Bundled tracks are registered under `assets/audio/` in `pubspec.yaml` and loaded via `AudioSource.asset(...)`.
-- Streams from `just_audio` (`playingStream`, `positionStream`, `durationStream`, and `processingStateStream`) update internal state and notify the UI.
-- `seekTo(Duration)` seeks the active source; `playTrack(int)` loads and starts a selected track; `skipToNext()` and `skipToPrevious()` navigate across the three bundled tracks; reaching `ProcessingState.completed` automatically advances to the next track.
+- **Bundled Playback**: The three bundled tracks are registered under `assets/audio/` in `pubspec.yaml` and loaded as a `just_audio` playlist via `setAudioSources(...)` with `AudioSource.asset(...)`.
+- **User-Selected Playback**: `FilePicker.pickFile(type: FileType.audio)` opens the Android system picker without requesting broad storage permissions. Selected files are validated, appended to the playlist via `addAudioSource(AudioSource.file(...))`, and played immediately. Cancellation is ignored cleanly, and invalid/unplayable files are rolled back with a `SnackBar` message.
+- **5-Second Seek**: `seekBy(Duration)` adds `-5s` or `+5s` to the current position, clamps between `Duration.zero` and `duration`, and delegates to `seekTo(...)`.
 
 ## Equalizer Implementation
 
-- **Native Android EQ API**: Uses `just_audio`'s `AndroidEqualizer` (backed by Android's `android.media.audiofx.Equalizer`), with `<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />` declared in `android/app/src/main/AndroidManifest.xml`. No custom DSP algorithm is implemented.
-- **Attachment**: `AndroidEqualizer` is passed into `AudioPipeline(androidAudioEffects: [_equalizer])` when constructing `AudioPlayer`, attaching it directly to the player's Android audio session.
-- **Band Mapping**: After enabling the equalizer, `AudioPlayerService` awaits `AndroidEqualizer.parameters` to inspect the device's actual band count and `centerFrequency` (in Hz). It dynamically maps **Low**, **Mid**, and **High** to the available bands closest to `250 Hz`, `1000 Hz`, and `4000 Hz` respectively.
-- **Gain Range & Units**: Uses the device-reported `minDecibels` and `maxDecibels` range in dB (falling back to `-15.0..15.0` dB for display if unavailable).
-- **Real-Time Updates & Reset**: `setLowGain`, `setMidGain`, and `setHighGain` call `band.setGain(gainDb)` on the mapped `AndroidEqualizerBand` while audio is playing without restarting the track. `resetEq()` sets all three mapped bands to `0.0 dB` and notifies listeners so the sliders and dB labels reset together.
+- **Native Android EQ API**: Uses `just_audio`'s `AndroidEqualizer` (backed by `android.media.audiofx.Equalizer`). No custom DSP algorithm is implemented.
+- **Attachment**: `AndroidEqualizer` is passed into `AudioPipeline(androidAudioEffects: [_equalizer])` on the single `AudioPlayer` instance.
+- **Band Mapping**: After enabling the equalizer, `AudioPlayerService` awaits `AndroidEqualizer.parameters` to read the device's band count and `centerFrequency` (in Hz), mapping **Low**, **Mid**, and **High** to the bands closest to `250 Hz`, `1000 Hz`, and `4000 Hz`.
+- **Gain & Reset**: Uses the device-reported `minDecibels..maxDecibels` range in dB. Slider changes call `band.setGain(gainDb)` in real time without restarting playback; **Reset** sets all three mapped bands to `0.0 dB` and notifies the UI.
+
+## Android Notification Controls & Configuration
+
+- `JustAudioBackground.init(...)` is called in `main()` before `runApp`, and each `AudioSource` in the playlist is tagged with a `MediaItem` (`id`, `title`, `artist`).
+- `android/app/src/main/kotlin/com/example/music_player/MainActivity.kt` extends `AudioServiceActivity` so the Flutter engine binds to the media service.
+- `android/app/src/main/AndroidManifest.xml` declares:
+  - `MODIFY_AUDIO_SETTINGS` (for `Equalizer`)
+  - `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` (for `AudioService` foreground media playback)
+  - `POST_NOTIFICATIONS` (for Android 13+ notification visibility)
+  - `com.ryanheise.audioservice.AudioService` (`foregroundServiceType="mediaPlayback"`) and `com.ryanheise.audioservice.MediaButtonReceiver`
 
 ## Challenges Faced
 
-- **Verifying `just_audio` `0.10.6` `AndroidEqualizer` API details**: In `just_audio` `0.10.6`, `AndroidEqualizer.parameters` is a `Future<AndroidEqualizerParameters>` rather than a stream, `AndroidEqualizerBand.centerFrequency` is reported in **Hz** (not milli-Hz), and the effect is released automatically when `AudioPlayer.dispose()` runs. Inspecting the resolved package source caught these mismatches before runtime.
+- **Inspecting `just_audio` `0.10.6` and `file_picker` `13.4.1` APIs**: `just_audio` `0.10.6` exposes `AndroidEqualizer.parameters` as a `Future` and `centerFrequency` in Hz (not milli-Hz), while `file_picker` `13.4.1` uses static `FilePicker.pickFile(...)` rather than `FilePicker.platform.pickFiles(...)`. Inspecting the installed package sources prevented runtime/API mismatches.
 - **Personal Development Challenges** *(to be completed by the author)*:
-  - *[Add any device-specific observations, setup issues, or personal learnings here after testing on your Android phone.]*
+  - *[Add any device-specific observations or learnings after testing on your Android phone.]*
 
-## How to Run
+## Installation & Running
 
 1. **Install dependencies**:
    ```powershell
    flutter pub get
    ```
 2. **Connect an Android device**:
-   - Enable **Developer Options** and **USB Debugging** on your Android phone, connect via USB, and verify detection:
+   - Enable **Developer Options** and **USB Debugging** on your Android phone, connect via USB, and verify:
      ```powershell
      flutter devices
      ```
@@ -80,14 +90,13 @@ The project uses a straightforward separation between data model, audio service,
 
 ## Testing
 
-- **Static analysis & widget smoke test**: `flutter analyze` (`No issues found!`) and `flutter test` (`test/widget_test.dart`) passed locally.
-- **Physical-device manual testing checklist** *(pending physical-device confirmation)*:
+- Static analysis (`flutter analyze`) and Android build checks verify compilation, while real audio output, file picking, equalizer effects, and media notifications require **manual testing on a physical Android phone**:
   1. Launch in portrait on a physical Android phone and verify no layout overflow.
-  2. Tap Play/Pause and confirm audio starts/pauses and button icon updates.
-  3. Drag the seek slider and verify elapsed time updates smoothly without jumping back, and playback seeks on release.
-  4. Test Next, Previous (`< 3s` vs `> 3s` elapsed), and tapping each track in the list; confirm active track highlighting updates.
-  5. While playing audio (preferably with headphones), adjust **Low**, **Mid**, and **High** sliders and confirm real-time tonal changes without track interruption.
-  6. Tap **Reset** and verify all three sliders return to `0.0 dB` and the audio returns to flat response.
+  2. Play/Pause bundled tracks, test Next/Previous, and drag the seek slider.
+  3. Tap **Rewind 5s** and **Forward 5s** near the slider; verify 5-second jumps clamped at `00:00` and total duration.
+  4. Tap **Add Music**, pick an audio file from the device, and verify it appears in the list and plays; also test canceling the picker.
+  5. Adjust **Low**, **Mid**, and **High** EQ sliders while playing audio and tap **Reset** to verify `0.0 dB` flat reset.
+  6. Pull down the Android notification shade (and check the lock screen) to verify track title, artist, Play/Pause, Previous, and Next controls.
 
 ## AI Tools Disclosure
 
@@ -95,13 +104,13 @@ The project uses a straightforward separation between data model, audio service,
 - **Cline / AI coding assistance** (using Claude Sonnet 4.6 and Gemini) was used for coding assistance, code generation, debugging, and documentation.
 - The final implementation will be reviewed and verified by the author.
 
-## Limitations
+## Known Limitations
 
-- **Android-only Equalizer**: `AndroidEqualizer` is only initialized when running on Android; EQ controls are disabled on other platforms or emulators lacking `audiofx` support.
-- **Static Track Metadata**: Track titles (`Track 1`–`Track 3`) and `Unknown Artist` are hard-coded rather than parsed from ID3 tags.
-- **3-Band Mapping**: Maps `Low`, `Mid`, and `High` onto three representative bands of the device's native equalizer rather than exposing every hardware band.
-- **No Background Media Controls**: Lock-screen/notification media controls are not implemented.
-- **Physical Device Verification**: Audio playback and equalizer output on a physical Android phone have not yet been confirmed by the author.
+- **Android-only Equalizer & Notifications**: `AndroidEqualizer` is Android-only; EQ controls are disabled on other platforms or emulators without `audiofx` support.
+- **Static Bundled Metadata**: Bundled tracks use static titles (`Track 1`–`Track 3`) and `Unknown Artist`; device tracks use the filename and `Device Audio` rather than parsing ID3 tags.
+- **Session-Only Added Tracks**: User-selected tracks are kept in memory for the current app session (no local database persistence).
+- **3-Band Mapping**: Maps `Low`, `Mid`, and `High` onto three representative bands of the device's native equalizer.
+- **Physical Device Verification Pending**: Real-device playback, file picking, EQ audio output, and notification controls have not yet been confirmed on a physical Android phone.
 
 ## License
 

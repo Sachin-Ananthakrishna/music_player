@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Displays a seekable playback slider with elapsed time and total duration.
+/// Displays a seekable playback slider with elapsed time, total duration,
+/// and 5-second rewind/forward buttons.
 ///
 /// Tracks drag state locally so incoming position updates do not cause the
 /// slider thumb or elapsed label to jump while the user is scrubbing.
@@ -8,12 +9,16 @@ class ProgressSlider extends StatefulWidget {
   final Duration position;
   final Duration duration;
   final ValueChanged<Duration> onSeek;
+  final VoidCallback onRewind5;
+  final VoidCallback onForward5;
 
   const ProgressSlider({
     super.key,
     required this.position,
     required this.duration,
     required this.onSeek,
+    required this.onRewind5,
+    required this.onForward5,
   });
 
   @override
@@ -80,6 +85,26 @@ class _ProgressSliderState extends State<ProgressSlider> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(_formatDuration(displayedPosition), style: textStyle),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: hasDuration ? widget.onRewind5 : null,
+                    icon: const Icon(Icons.replay_5_rounded),
+                    iconSize: 24,
+                    tooltip: 'Rewind 5 seconds',
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: hasDuration ? widget.onForward5 : null,
+                    icon: const Icon(Icons.forward_5_rounded),
+                    iconSize: 24,
+                    tooltip: 'Forward 5 seconds',
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
               Text(_formatDuration(widget.duration), style: textStyle),
             ],
           ),

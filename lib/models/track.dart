@@ -1,4 +1,5 @@
-/// A single playable audio track bundled with the app.
+/// A single playable audio track, either bundled as an asset or picked from
+/// the user's device.
 class Track {
   /// Display title of the track.
   final String title;
@@ -6,12 +7,16 @@ class Track {
   /// Artist name, or a default label when no metadata is available.
   final String artist;
 
-  /// Asset path to the audio file (e.g. 'assets/audio/track1.mp3').
-  final String assetPath;
+  /// Asset path (when [isAsset] is true) or local file path on the device.
+  final String path;
+
+  /// True for bundled Flutter assets; false for user-selected device files.
+  final bool isAsset;
 
   const Track({
     required this.title,
     required this.artist,
-    required this.assetPath,
+    required this.path,
+    this.isAsset = true,
   });
 }
