@@ -22,7 +22,7 @@ Download the latest Android APK from GitHub Releases:
 
 ## Screenshots
 
-> ![Music Player](screenshots/music_player.jpeg)
+<img src="screenshots/music_player.jpeg" alt="Music Player" width="300">
 
 ## Tech Stack & Packages
 
